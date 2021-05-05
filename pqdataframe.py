@@ -5,7 +5,7 @@ import os,mysql.connector,yaml
 from sqlalchemy import create_engine
 
 with open("config.yml", 'r') as ymlfile:
-    cfg = yaml.load(ymlfile)
+    cfg = yaml.safe_load(ymlfile)
 
 #_,_,filenames2 = next(os.walk('../pqreport/media/run/'))
 #runfiles = list(map(lambda x : x, filenames2))
