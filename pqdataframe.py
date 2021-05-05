@@ -7,10 +7,13 @@ from sqlalchemy import create_engine
 with open("config.yml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
-_,_,filenames2 = next(os.walk('../pqreport/media/run/'))
-runfiles = list(map(lambda x : x, filenames2))
+#_,_,filenames2 = next(os.walk('../pqreport/media/run/'))
+#runfiles = list(map(lambda x : x, filenames2))
 
-if os.path.exists('../pqreport/media/run/runscript'):
+folderpath = '../pqreport/media/'
+csvfolder = 'csv'
+
+if os.path.exists(folderpath+'run/runscript'):
     '''
     s_file = runfiles[0].split('_')
     print(s_file)
@@ -18,8 +21,8 @@ if os.path.exists('../pqreport/media/run/runscript'):
         exit
     else:
     '''
-    os.rename('../pqreport/media/run/runscript','../pqreport/media/run/runscript_lock')
-    _,_,filenames = next(os.walk('../pqreport/media/csv/'))
+    os.rename(folderpath+'run/runscript',folderpath+'run/runscript_lock')
+    _,_,filenames = next(os.walk(folderpath+csvfolder+'/'))
     allfiles = list(map(lambda x : x.split('_')[0].split('.')[0], filenames))
     allfiles.sort()
     print(allfiles)
@@ -37,8 +40,8 @@ if os.path.exists('../pqreport/media/run/runscript'):
     secondfiles.sort()
 
     #print(os.walk('media/csv/'))
-    path1 = '../pqreport/media/csv/'+str(latestfiles[-1])
-    path2 = '../pqreport/media/csv/'+str(secondfiles[-1])
+    path1 = folderpath+csvfolder+'/'+str(latestfiles[-1])
+    path2 = folderpath+csvfolder+'/'+str(secondfiles[-1])
     df1=pd.read_excel(path1).sort_values(by=['ITEM_NO','PRODTYPE_TEXT','PART_TEXT','MATERIAL_TEXT'], ascending=False)
     df2=pd.read_excel(path2).sort_values(by=['ITEM_NO','PRODTYPE_TEXT','PART_TEXT','MATERIAL_TEXT'], ascending=False)
 
