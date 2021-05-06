@@ -3,6 +3,7 @@ from pandas.io import sql
 from datetime import datetime
 import os,mysql.connector,yaml
 from sqlalchemy import create_engine
+from pathlib import Path
 
 with open("config.yml", 'r') as ymlfile:
     cfg = yaml.safe_load(ymlfile)
@@ -11,7 +12,7 @@ with open("config.yml", 'r') as ymlfile:
 #runfiles = list(map(lambda x : x, filenames2))
 
 folderpath = '../pqreport/media/'
-csvfolder = 'csv'
+csvfolder = 'test'
 
 if os.path.exists(folderpath+'run/runscript'):
     '''
@@ -22,29 +23,45 @@ if os.path.exists(folderpath+'run/runscript'):
     else:
     '''
     os.rename(folderpath+'run/runscript',folderpath+'run/runscript_lock')
-    _,_,filenames = next(os.walk(folderpath+csvfolder+'/'))
-    allfiles = list(map(lambda x : x.split('_')[0].split('.')[0], filenames))
-    allfiles.sort()
-    print(allfiles)
+    #_,_,filenames = next(os.walk(folderpath+csvfolder+'/'))
+    
+    #aff files rmeove the temp charaters
+    #allfiles = list(map(lambda x : x.split('_')[0].split('.')[0], filenames))
+    
+    #allfiles = list(map(lambda x : x.split('.')[0], filenames))
+    #allfiles.sort()
+    #print(allfiles)
 
     print('running')
-    latestfile = allfiles[-1]
-    uniquefiles = list(set(allfiles))
-    uniquefiles.sort()
-    secondlastfile = uniquefiles[-2]
 
-    latestfiles = list(filter(lambda x: x.startswith(latestfile),filenames))
-    secondfiles = list(filter(lambda x: x.startswith(secondlastfile),filenames))
+    ##latestfile = allfiles[-1]
+    #uniquefiles = list(set(allfiles))
+    #uniquefiles.sort()
+    #secondlastfile = uniquefiles[-2]
 
-    latestfiles.sort()
-    secondfiles.sort()
+    #latestfiles = list(filter(lambda x: x.startswith(latestfile),filenames))
+    #secondfiles = list(filter(lambda x: x.startswith(secondlastfile),filenames))
+    #latestfiles = latestfile
+    #secondfiles = secondlastfile
+    #print(latestfiles)
+    #print(secondfiles)
 
+    #latestfiles.sort()
+    #secondfiles.sort()
+
+
+    paths = sorted(Path(folderpath+csvfolder+'/').iterdir(), key=os.path.getmtime)
+    #print(str(paths[-1]))
+    latestfiles = str(paths[-1]).split('\\')[-1]
+    secondfiles = str(paths[-2]).split('\\')[-1]
+    
+    print(latestfiles)
+    print(secondfiles)
     #print(os.walk('media/csv/'))
-    path1 = folderpath+csvfolder+'/'+str(latestfiles[-1])
-    path2 = folderpath+csvfolder+'/'+str(secondfiles[-1])
+    path1 = folderpath+csvfolder+'/'+str(latestfiles)
+    path2 = folderpath+csvfolder+'/'+str(secondfiles)
     df1=pd.read_excel(path1).sort_values(by=['ITEM_NO','PRODTYPE_TEXT','PART_TEXT','MATERIAL_TEXT'], ascending=False)
     df2=pd.read_excel(path2).sort_values(by=['ITEM_NO','PRODTYPE_TEXT','PART_TEXT','MATERIAL_TEXT'], ascending=False)
-
 
     df1['material'] = df1['PRODTYPE_TEXT'].astype(str)+' '+df1['PART_TEXT'].astype(str)+' '+df1['MATERIAL_TEXT'].astype(str)
     df2['material'] = df2['PRODTYPE_TEXT'].astype(str)+' '+df2['PART_TEXT'].astype(str)+' '+df2['MATERIAL_TEXT'].astype(str)
@@ -93,33 +110,33 @@ if os.path.exists(folderpath+'run/runscript'):
     ##formatted_date = now.strftime('%Y-%m-%d %H:%M:%S')
     ##df['created_on'] = datetime.strptime(formatted_date, '%Y-%m-%d %H:%M:%S')
     ##df['sort'] = 0
-    
-    
-    df['status']=df.apply(lambda row: 1 if row.fullmaterial !='' else 0 , axis=1)
-    #print(df)
+    if not df.empty:
 
-    #WORKING
-    hostname=cfg['mysql']['host']
-    dbname=cfg['mysql']['db']
-    uname=cfg['mysql']['user']
-    pwd=""
-    mydb = mysql.connector.connect(
-        host=cfg['mysql']['host'],
-        database=cfg['mysql']['db'],
-        user=cfg['mysql']['user'],
-        password=''
-    )
-    mycursor = mydb.cursor()
-    mycursor.execute(""" DELETE FROM material_articles """)
-    mydb.commit()
-    for _, row in df.iterrows():
-        a = (row[0],formatted_date,row[9],row[2],row[7],row[1],row[4],row[3],0,row[10])
-        print(a)
-        mySql_insert_query = "INSERT INTO material_articles (article_id, created_on, fullmaterial, hfb_id, material,name,pa_id,pra_id,sort,status) VALUES (%s, %s,%s, %s,%s, %s,%s, %s,%s,%s);"
+        df['status']=df.apply(lambda row: 1 if row.fullmaterial !='' else 0 , axis=1)
+        #print(df)
 
-        mycursor.execute(mySql_insert_query, a)
-        #print(mycursor._last_executed)
+        #WORKING
+        hostname=cfg['mysql']['host']
+        dbname=cfg['mysql']['db']
+        uname=cfg['mysql']['user']
+        pwd=""
+        mydb = mysql.connector.connect(
+            host=cfg['mysql']['host'],
+            database=cfg['mysql']['db'],
+            user=cfg['mysql']['user'],
+            password=''
+        )
+        mycursor = mydb.cursor()
+        mycursor.execute(""" DELETE FROM material_articles """)
         mydb.commit()
+        for _, row in df.iterrows():
+            a = (row[0],formatted_date,row[9],row[2],row[7],row[1],row[4],row[3],0,row[10])
+            print(a)
+            mySql_insert_query = "INSERT INTO material_articles (article_id, created_on, fullmaterial, hfb_id, material,name,pa_id,pra_id,sort,status) VALUES (%s, %s,%s, %s,%s, %s,%s, %s,%s,%s);"
+
+            mycursor.execute(mySql_insert_query, a)
+            #print(mycursor._last_executed)
+            mydb.commit()
         
     os.remove('../pqreport/media/run/runscript_lock')
     
